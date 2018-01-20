@@ -37,27 +37,21 @@ class Plugin(object):
                     self.rules.append((re.compile(rule), method))
 
     def process_message(self, protocol, message):
-        if self._is_command(message.message):
-            command_name, _, args = message.message.lstrip("!").partition(" ")
-            command = self.commands.get(command_name, None)
-            if command is not None:
-                # todo should really pass the message object to the command func
-                d = defer.maybeDeferred(command, args)
-                d.addErrback(self._error)
-                d.addCallback(self._msg, message.channel, protocol)
+        command_name, _, _ = message.message.lstrip("!").partition(" ")
+        command = self.commands.get(command_name, None)
+        if command is not None:
+            d = defer.maybeDeferred(command, message)
+            d.addErrback(self._error)
+            d.addCallback(self._msg, message.channel, protocol)
         else:
             for regex, method in self.rules:
                 if regex.search(message.message):
-                    # todo should really pass the message object to the rule func
-                    d = defer.maybeDeferred(method, message.message)
+                    d = defer.maybeDeferred(method, message)
                     d.addErrback(self._error)
                     d.addCallback(self._msg, message.channel, protocol)
 
     def _error(self, failure):
         return failure.getErrorMessage()
-
-    def _is_command(self, message):
-        return message.startswith("!")
 
     def _msg(self, message, user, protocol):
         protocol.msg(user, message)

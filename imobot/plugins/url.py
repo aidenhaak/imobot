@@ -13,7 +13,7 @@ URL_REGEX = r"(?u)(https?://\S+)"
 class UrlTitles(plugin.Plugin):
     @plugin.rule(URL_REGEX)
     def title_auto(self, message):
-        urls = re.compile(URL_REGEX).findall(message)
+        urls = re.compile(URL_REGEX).findall(message.message)
         titles = []
         for url in urls:
             html = urlopen(url)
