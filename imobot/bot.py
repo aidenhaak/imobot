@@ -4,6 +4,7 @@ from twisted.internet import defer, protocol, reactor
 
 import conf
 from message import Message
+import plugins.eightball
 import plugins.stats
 import plugins.url
 
@@ -13,7 +14,7 @@ class IrcProtocol(irc.IRCClient):
         self.channels = conf.CHANNELS
         self.nickname = conf.NICKNAME
         self.password = conf.PASSWORD
-        self.plugins = [plugins.stats.Stats(), plugins.url.UrlTitles()]
+        self.plugins = [plugins.eightball.MagicEightBall(), plugins.stats.Stats(), plugins.url.UrlTitles()]
 
         self.deferred = defer.Deferred()
 
