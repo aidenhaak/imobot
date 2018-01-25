@@ -25,6 +25,9 @@ def parse_bot_settings():
     return settings.BotSettings(args.settings)
 
 if __name__ == "__main__":
-    bot_settings = parse_bot_settings()
-    log.startLogging(sys.stderr)
-    task.react(main, [bot_settings])
+    try:
+        bot_settings = parse_bot_settings()
+        log.startLogging(sys.stderr)
+        task.react(main, [bot_settings])
+    except settings.BotSettingsError as e:
+        print(e)

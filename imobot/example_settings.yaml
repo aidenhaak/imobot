@@ -1,11 +1,11 @@
 nickname: "imobot"
 password: ""
-hostname: "irc.example.com"
+hostname: "localhost"
 port: 6667
-channels:
-  - name: "#general"
-    plugins:
-      - name: "Stats"
-        url: "http://stats.example.com/"
-      - name: "UrlTitles"
-      - name: "MagicEightBall"
+#channels:
+#  - name: "#general"
+#    plugins:
+#      - name: "Stats"
+#        kwargs: {"url" : "http://stats.example.com"}
+#      - name: "UrlTitles"
+#      - name: "MagicEightBall"
