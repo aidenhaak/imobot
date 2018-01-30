@@ -8,6 +8,8 @@ Features:
 
 ## TODO
 
-- YAML support for settings.
+- ~~YAML support for settings.~~
 - Command rate limiting.
 - Better logging.
+- Better error handling.
+- Write some tests.
