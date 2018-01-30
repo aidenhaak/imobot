@@ -6,7 +6,7 @@ from urllib.request import urlopen
 
 import lxml.html
 
-import plugin
+from . import plugin
 
 URL_REGEX = r"(?u)(https?://\S+)"
 

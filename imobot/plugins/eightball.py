@@ -1,7 +1,7 @@
 
 import random
 
-import plugin
+from . import plugin
 
 MAGIC_EIGHT_BALL_RESPONSES = [
     "It is certain",

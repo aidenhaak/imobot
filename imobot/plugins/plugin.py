@@ -42,13 +42,13 @@ class Plugin(object):
         if command is not None:
             d = defer.maybeDeferred(command, message)
             d.addErrback(self._error)
-            d.addCallback(self._msg, message.channel, protocol)
+            d.addCallback(self._msg, message.channel.name, protocol)
         else:
             for regex, method in self.rules:
                 if regex.search(message.message):
                     d = defer.maybeDeferred(method, message)
                     d.addErrback(self._error)
-                    d.addCallback(self._msg, message.channel, protocol)
+                    d.addCallback(self._msg, message.channel.name, protocol)
 
     def _error(self, failure):
         return failure.getErrorMessage()
@@ -56,3 +56,9 @@ class Plugin(object):
     def _msg(self, message, user, protocol):
         protocol.msg(user, message)
 
+def load_plugin(plugin_name, **kwargs):
+    class_type = next((cls_ for cls_ in type.__subclasses__(Plugin) if cls_.__name__ == plugin_name), None)
+    if class_type is not None and isinstance(class_type, type):
+        return class_type(**kwargs)
+    else:
+        return None      

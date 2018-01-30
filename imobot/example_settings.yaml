@@ -6,6 +6,6 @@ channels:
   - name: "#general"
     plugins:
       - name: "Stats"
-        kwargs: {"url" : "http://stats.example.com"}
+        url: "http://stats.example.com"
       - name: "UrlTitles"
       - name: "MagicEightBall"

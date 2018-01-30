@@ -15,5 +15,6 @@ class Message(object):
 
 
 class Channel(object):
-    def __init__(self, name):
+    def __init__(self, name, plugins):
         self.name = name
+        self.plugins = plugins

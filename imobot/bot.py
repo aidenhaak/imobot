@@ -11,22 +11,22 @@ class IrcProtocol(twisted_irc.IRCClient):
         self.channels = bot_settings.channels
         self.nickname = bot_settings.nickname
         self.password = bot_settings.password
-        self.plugins = [eightball.MagicEightBall(), stats.Stats(), url.UrlTitles()]
-
         self.deferred = defer.Deferred()
 
     def signedOn(self):
         for channel in self.channels:
             self.join(channel.name)
 
-    def privmsg(self, user, channel, message):
+    def privmsg(self, user, channel_name, message):
+        channel = next((channel for channel in self.channels if channel.name == channel_name), None)
         self.dispatch_message(irc.Message(user, channel, message, False))
     
-    def action(self, user, channel, message):
+    def action(self, user, channel_name, message):
+        channel = next((channel for channel in self.channels if channel.name == channel_name), None)
         self.dispatch_message(irc.Message(user, channel, message, True))
     
     def dispatch_message(self, message):
-        for plugin in self.plugins:
+        for plugin in message.channel.plugins:
             plugin.process_message(self, message)
 
 

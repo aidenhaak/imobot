@@ -1,8 +1,10 @@
 
-from cerberus import Validator
 import yaml
 
+from cerberus import Validator
+
 import irc
+from plugins import plugin
 
 BOT_SETTINGS_SCHEMA = {
         "nickname" : { "type" : "string", "required" : True },
@@ -25,15 +27,11 @@ BOT_SETTINGS_SCHEMA = {
                         "type" : "list",
                         "schema" : 
                         {
+                            "allow_unknown" : True,
                             "type" : "dict",
                             "schema" : 
                             {
-                                "name" : { "type" : "string", "required" : True, },
-                                "kwargs" :
-                                {
-                                    "type" : "dict",
-                                    "keyschema" : { "type" : "string" }
-                                }
+                                "name" : { "type" : "string", "required" : True, }
                             }
                         }
                     }
@@ -53,16 +51,28 @@ class BotSettings(object):
                 self.password = settings["password"]
                 self.hostname = settings["hostname"]
                 self.port = settings["port"]
-                self.channels = [irc.Channel(channel["name"]) for channel in settings["channels"]]
+                self._load_channels(settings["channels"])
             else:
                 raise BotSettingsError(validator.errors)
 
+    def _load_channels(self, channels):
+        self.channels = []
+
+        for settings in channels:
+            channel_plugins = self._load_channel_plugins(settings["plugins"])
+            self.channels.append(irc.Channel(settings["name"], channel_plugins))
+
+    def _load_channel_plugins(self, plugin_settings):
+        channel_plugins = []
+
+        for settings in plugin_settings:
+            plugin_name = settings.pop("name")
+            channel_plugin = plugin.load_plugin(plugin_name, **settings)
+            if channel_plugin is not None:
+                channel_plugins.append(channel_plugin)
+
+        return channel_plugins
 
 class BotSettingsError(Exception):
     def __init__(self, errors):
         self.errors = errors
-
-class BotSettingsValidator(Validator):
-
-    def __init__(self):
-        super().__init__(BOT_SETTINGS_SCHEMA)
