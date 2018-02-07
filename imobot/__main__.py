@@ -1,8 +1,4 @@
 
-if __name__ == "__main__":
-    import sys, os
-    sys.path.append(os.path.dirname(__file__))
-
 import argparse
 import sys
 
@@ -13,7 +9,15 @@ from twisted.application import internet
 import bot
 import settings
 
-def main(reactor, bot_settings):
+def main():
+    try:
+        bot_settings = parse_bot_settings()
+        log.startLogging(sys.stderr)
+        task.react(run_bot, [bot_settings])
+    except settings.BotSettingsError as e:
+        print(e)
+
+def run_bot(reactor, bot_settings):
     description = "tcp:{}:{}".format(bot_settings.hostname, bot_settings.port)
     endpoint = endpoints.clientFromString(reactor, description)
     factory = bot.IrcBotFactory(bot_settings)
@@ -29,9 +33,4 @@ def parse_bot_settings():
     return settings.BotSettings(args.settings)
 
 if __name__ == "__main__":
-    try:
-        bot_settings = parse_bot_settings()
-        log.startLogging(sys.stderr)
-        task.react(main, [bot_settings])
-    except settings.BotSettingsError as e:
-        print(e)
+    main()

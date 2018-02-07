@@ -5,6 +5,7 @@ port: 6667
 channels:
   - name: "#general"
     plugins:
+      - name: "Weather"
       - name: "Stats"
         url: "http://stats.example.com"
       - name: "UrlTitles"
