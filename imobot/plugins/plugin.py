@@ -36,13 +36,15 @@ class Plugin(object):
                 for rule in method.rules:
                     self.rules.append((re.compile(rule), method))
 
-    def process_message(self, protocol, message):
-        command_name, _, _ = message.message.lstrip("!").partition(" ")
-        command = self.commands.get(command_name, None)
-        if command is not None:
-            d = defer.maybeDeferred(command, message)
-            d.addErrback(self._error)
-            d.addCallback(self._msg, message.channel.name, protocol)
+    def process_message(self, protocol, message):       
+        if message.message.startswith("!"):
+            command_name, _, _ = message.message.lstrip("!").partition(" ")
+            command = self.commands.get(command_name, None)
+
+            if command is not None:
+                d = defer.maybeDeferred(command, message)
+                d.addErrback(self._error)
+                d.addCallback(self._msg, message.channel.name, protocol)
         else:
             for regex, method in self.rules:
                 if regex.search(message.message):
