@@ -78,7 +78,7 @@ class Crypto(plugin.Plugin):
         price_element = crypto_element_children[3]
         price = float(price_element[0].text.strip()[1:])
         change_element = crypto_element_children[6]
-        percent_change = float(change_element.text.strip()[:1])
+        percent_change = float(change_element.text.strip()[:-1])
         absolute_change = percent_change * price / 100
 
         if percent_change == 0:
@@ -91,11 +91,11 @@ class Crypto(plugin.Plugin):
             return assembleFormattedText(
                 attributes.normal[attributes.bold[crypto_name],
                 f" ({crypto_symbol}) ${price:,.2f} (USD) ",
-                attributes.fg.red[f"▼ ${absolute_change:.2f} ({percent_change:.2f}%)"]           
+                attributes.fg.red[f"▼ ${abs(absolute_change):.2f} ({abs(percent_change):.2f}%)"]           
                 ])
         else:
             return assembleFormattedText(
                 attributes.normal[attributes.bold[crypto_name],
                 f" ({crypto_symbol}) ${price:,.2f} (USD) ",
-                attributes.fg.green[f"▲ ${absolute_change:.2f} ({percent_change:.2f}%)"]           
+                attributes.fg.green[f"▲ ${abs(absolute_change):.2f} ({abs(percent_change):.2f}%)"]           
                 ])
