@@ -45,7 +45,7 @@ class Crypto(plugin.Plugin):
             return True
 
         delta = datetime.datetime.now() - self.crypto_data_cache_time
-        return delta_hours > 120
+        return delta.seconds > 120
 
     def update_cached_crypto_data(self):
         try:
