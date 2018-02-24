@@ -18,7 +18,7 @@ class Weather(plugin.Plugin):
         "sydney" : "Sydney",
         "syd" : "Sydney",
         "melbourne" : "Melbourne",
-        "mlb" : "Melbourne",
+        "mel" : "Melbourne",
         "brisbane" : "Brisbane",
         "bne" : "Brisbane",
         "perth" : "Perth",
@@ -73,8 +73,8 @@ class Weather(plugin.Plugin):
                 wind = wind_element.text.strip()
                 
                 minmax_element = tip_element.xpath("p[@class=\"minmax\"]")[0]
-                temp_min = minmax_element.text.strip()
-                temp_max = minmax_element[0].text.strip()
+                temp_min = minmax_element.text.strip() if minmax_element.text else None
+                temp_max = minmax_element.xpath("span[@class=\"max\"]")[0].text.strip()
                 
                 summary_element = tip_element.xpath("p[@class=\"precis\"]")[0]
                 summary = summary_element.text.strip()
