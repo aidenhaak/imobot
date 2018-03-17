@@ -19,7 +19,7 @@ class AsxStockQuotes(plugin.Plugin):
         if cached_data is None or self.is_asx_data_stale(cached_data[0]):
             cached_data = self.get_asx_data(asx_code)
 
-        return f"Unabled to get ASX data for {asx_code}" if cached_data is None else cached_data[1]
+        return f"Unable to get ASX data for {asx_code}" if cached_data is None else cached_data[1]
 
     def is_asx_data_stale(self, asx_data_cache_time):
         if asx_data_cache_time is None:
@@ -38,9 +38,8 @@ class AsxStockQuotes(plugin.Plugin):
             response = urlopen(f"https://query1.finance.yahoo.com/v8/finance/chart/{asx_code}.AX?range=2d&interval=1d&indicators=quote&includeTimestamps=true")
             data = json.loads(response.read().decode("utf8"))
 
-            close_data = data["chart"]["result"][0]["indicators"]["quote"][0]["close"]
-            previous_close = close_data[0]
-            current_price = close_data[1]
+            previous_close = data["chart"]["result"][0]["meta"]["chartPreviousClose"]
+            current_price = data["chart"]["result"][0]["indicators"]["quote"][0]["close"][0]
 
             change = current_price - previous_close
             percent_change = change / previous_close * 100
