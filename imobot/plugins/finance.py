@@ -35,7 +35,7 @@ class AsxStockQuotes(plugin.Plugin):
             root = lxml.html.fromstring(html)
             company_name = root.xpath("//h1[@data-reactid=\"7\"]")[0].text[9:]
 
-            response = urlopen(f"https://query1.finance.yahoo.com/v8/finance/chart/{asx_code}.AX?range=2d&interval=1d&indicators=quote&includeTimestamps=true")
+            response = urlopen(f"https://query1.finance.yahoo.com/v8/finance/chart/{asx_code}.AX?range=1d&interval=1d")
             data = json.loads(response.read().decode("utf8"))
 
             previous_close = data["chart"]["result"][0]["meta"]["chartPreviousClose"]
