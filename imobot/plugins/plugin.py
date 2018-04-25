@@ -7,7 +7,7 @@ def command(*command_list):
     def decorator(function):
         if not hasattr(function, "commands"):
             function.commands = []
-        function.commands.extend(command_list)
+        function.commands.extend([x.lower() for x in command_list])
         return function
 
     return decorator
@@ -39,6 +39,7 @@ class Plugin(object):
     def process_message(self, protocol, message):       
         if message.message.startswith("!"):
             command_name, _, _ = message.message.lstrip("!").partition(" ")
+            command_name = command_name.lower()
             command = self.commands.get(command_name, None)
 
             if command is not None:
@@ -59,6 +60,9 @@ class Plugin(object):
         protocol.msg(user, message)
 
 def load_plugin(plugin_name, **kwargs):
+    from . import weather
+    from . import crypto
+    from . import finance
     class_type = next((cls_ for cls_ in type.__subclasses__(Plugin) if cls_.__name__ == plugin_name), None)
     if class_type is not None and isinstance(class_type, type):
         return class_type(**kwargs)
