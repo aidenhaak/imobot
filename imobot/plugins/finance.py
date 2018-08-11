@@ -7,36 +7,55 @@ from errbot import BotPlugin, arg_botcmd
 from urllib.request import urlopen
 
 class Finance(BotPlugin):
-    cached_asx_data = {}
+    cached_stock_data = {}
 
-    ASX_URL = "https://au.finance.yahoo.com/quote/{asx_code}.AX"
+    YAHOO_FINANCE_URL = "https://au.finance.yahoo.com/quote/{stock_code}"
 
-    ASX_QUERY_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{asx_code}.AX?range=1d&interval=1d"
+    YAHOO_FINANCE_QUERY_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{stock_code}?range=1d&interval=1d"
 
-    @arg_botcmd("asx_code", type = str)
-    def asx(self, message, asx_code = None):    
-        if asx_code:
-            cached_data = self.cached_asx_data.get(asx_code, None)
-            if cached_data is None or self.is_asx_data_stale(cached_data[0]):
-                cached_data = self.get_asx_data(asx_code)
+    @arg_botcmd("stock_code", type = str)
+    def ndq(self, message, stock_code = None):  
+        return self.get_stock_quote(stock_code)
 
-        return f"Unable to get ASX data for {asx_code}" if cached_data is None else cached_data[1]
+    @arg_botcmd("stock_code", type = str)
+    def nyse(self, message, stock_code = None):
+        return self.get_stock_quote(stock_code)
 
-    def is_asx_data_stale(self, asx_data_cache_time):
-        if asx_data_cache_time is None:
+    @arg_botcmd("stock_code", type = str)
+    def asx(self, message, stock_code = None):    
+        asx_code = self.to_asx_code(stock_code)
+        return self.get_stock_quote(asx_code)
+
+    def get_stock_quote(self, stock_code):
+        stock_data = None
+
+        if stock_code:
+            stock_data = self.cached_stock_data.get(stock_code, None)
+            if stock_data is None or self.is_stock_data_stale(stock_data[0]):
+                stock_data = self.get_stock_data(stock_code)
+
+        return f"Unable to get stock data for {stock_code}" if stock_data is None else stock_data[1]
+
+
+    def to_asx_code(self, stock_code):
+        return f"{stock_code}.AX"
+
+    def is_stock_data_stale(self, stock_data_cache_time):
+        if stock_data_cache_time is None:
             return True
 
-        delta = datetime.datetime.now() - asx_data_cache_time
+        delta = datetime.datetime.now() - stock_data_cache_time
         return delta.seconds > 120
 
-    def get_asx_data(self, asx_code):
+    def get_stock_data(self, stock_code):
         try:
-            response = urlopen(self.ASX_URL.format(asx_code = asx_code))
+            response = urlopen(self.YAHOO_FINANCE_URL.format(stock_code = stock_code))
             html = response.read().decode("utf8")
             root = lxml.html.fromstring(html)
-            company_name = root.xpath("//h1[@data-reactid=\"7\"]")[0].text[9:]
+            company_name = root.xpath("//h1[@data-reactid=\"7\"]")[0].text
+            company_name = company_name[company_name.find("-") + 2:]
 
-            response = urlopen(self.ASX_QUERY_URL.format(asx_code = asx_code))
+            response = urlopen(self.YAHOO_FINANCE_QUERY_URL.format(stock_code = stock_code))
             data = json.loads(response.read().decode("utf8"))
 
             previous_close = round(data["chart"]["result"][0]["meta"]["chartPreviousClose"], 4)
@@ -45,14 +64,14 @@ class Finance(BotPlugin):
             change = current_price - previous_close
             percent_change = change / previous_close * 100
             
-            asx_quote = self.get_asx_quote(company_name, asx_code.upper(), current_price, change, percent_change)
-            asx_data = (datetime.datetime.now(), asx_quote)
-            self.cached_asx_data[asx_code] = asx_data
-            return asx_data
+            stock_quote = self.get_formatted_stock_quote(company_name, stock_code.upper(), current_price, change, percent_change)
+            stock_data = (datetime.datetime.now(), stock_quote)
+            self.cached_stock_data[stock_code] = stock_data
+            return stock_data
         except Exception:
-            pass # Ignore - just means ASX data doesn't get updated.
+            pass # Ignore - just means stock data doesn't get updated.
 
-    def get_asx_quote(self, company_name, asx_code, current_price, change, percent_change):
+    def get_formatted_stock_quote(self, company_name, stock_code, current_price, change, percent_change):
         grey = "{:color='grey'}"
         green = "{:color='green'}"
         red = "{:color='red'}"
@@ -66,11 +85,11 @@ class Finance(BotPlugin):
         current_price = f"${current_price:,.2f}" if current_price > 1 else f"{current_price_in_cents:,.2f}¢"
 
         if percent_change == 0:
-            return f"{company_name} (ASX:{asx_code}) {current_price} `► $0 (0%)`{grey}" 
+            return f"{company_name} ({stock_code}) {current_price} `► $0 (0%)`{grey}" 
         elif percent_change < 0:
-            return f"{company_name} (ASX:{asx_code}) {current_price} `▼ {change} ({abs(percent_change):.2f}%)`{red}"
+            return f"{company_name} ({stock_code}) {current_price} `▼ {change} ({abs(percent_change):.2f}%)`{red}"
         else:
-            return f"{company_name} (ASX:{asx_code}) {current_price} `▲ {change} ({abs(percent_change):.2f}%)`{green}"
+            return f"{company_name} ({stock_code}) {current_price} `▲ {change} ({abs(percent_change):.2f}%)`{green}"
 
     XE_URL = "http://www.xe.com/currencyconverter/convert/?Amount=1&From={currency_from}&To={currency_to}"
 
