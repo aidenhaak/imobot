@@ -1,0 +1,9 @@
+[Core]
+Name = Stats
+Module = stats
+
+[Python]
+Version = 3
+
+[Documentation]
+Description = Room statistics.

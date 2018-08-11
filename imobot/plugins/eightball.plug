@@ -1,0 +1,9 @@
+[Core]
+Name = MagicEightBall
+Module = eightball
+
+[Python]
+Version = 3
+
+[Documentation]
+Description = Magic eightball responses.

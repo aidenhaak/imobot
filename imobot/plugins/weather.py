@@ -1,14 +1,16 @@
 
 import datetime
-from twisted.words.protocols.irc import assembleFormattedText, attributes
+
+import fake_useragent
 import lxml.html
-from urllib.request import urlopen
+from errbot import BotPlugin, botcmd, arg_botcmd
+import urllib.request 
 
-from . import plugin
+class Weather(BotPlugin):
 
-BOM_URL = "http://www.bom.gov.au/"
+    BOM_URL = "http://www.bom.gov.au/"
 
-class Weather(plugin.Plugin):
+    USER_AGENT_FALLBACK = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 
     weather_data_cache_time = None
 
@@ -33,13 +35,13 @@ class Weather(plugin.Plugin):
         "dar" : "Darwin"
     }
 
-    @plugin.command("w", "weather")
-    def weather(self, message):    
-        _, _, location = message.message.lstrip("!").partition(" ")
+    @arg_botcmd("location", type = str)
+    def weather(self, message, location = None):
         location_name = self.location_names.get(location.lower(), None)
         if location_name is not None:
             if self.is_weather_data_stale():
                 self.update_cached_weather_data()
+
             return self.cached_weather_data[location_name]
         else:
             return f"Unkown location: {location_name}"
@@ -53,7 +55,14 @@ class Weather(plugin.Plugin):
 
     def update_cached_weather_data(self):
         try:
-            html = urlopen(BOM_URL)
+            request = urllib.request.Request(
+                self.BOM_URL, 
+                data=None, 
+                headers={
+                    "User-Agent": fake_useragent.UserAgent(fallback = self.USER_AGENT_FALLBACK).random
+                }
+            )
+            html = urllib.request.urlopen(request)
             tree = lxml.html.parse(html)
 
             weather_data = {}
@@ -80,17 +89,12 @@ class Weather(plugin.Plugin):
                 summary = summary_element.text.strip()
 
                 if temp_min:
-                    weather_data[location] = assembleFormattedText(
-                        attributes.normal[attributes.bold[location],
-                        f" Now: {temp_now}C {wind} Tomorrow: {temp_min}C/{temp_max}C {summary}"])
+                    weather_data[location] = f"{location} Now: {temp_now}C {wind} Tomorrow: {temp_min}C/{temp_max}C {summary}"
                 else:
-                    weather_data[location] = assembleFormattedText(
-                        attributes.normal[attributes.bold[location],
-                        f" Now: {temp_now}C {wind} Today: {temp_max}C {summary}"])
-                
+                    weather_data[location] = f"{location} Now: {temp_now}C {wind} Today: {temp_max}C {summary}"                
 
             # All the locations weather data was retrieved successfully. Update the cache time and data. 
             self.weather_data_cache_time = datetime.datetime.now()
             self.cached_weather_data = weather_data
-        except:
+        except Exception as e:
             pass # Ignore - just means cached weather data doesn't get updated.

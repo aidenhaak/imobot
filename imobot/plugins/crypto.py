@@ -1,14 +1,13 @@
 
 import datetime
-from twisted.words.protocols.irc import assembleFormattedText, attributes
 import lxml.html
+from errbot import BotPlugin, arg_botcmd
 from urllib.request import urlopen
 
-from . import plugin
+class Crypto(BotPlugin):
 
-CMC_URL = "https://coinmarketcap.com/"
+    CMC_URL = "https://coinmarketcap.com/"
 
-class Crypto(plugin.Plugin):
     crypto_data_cache_time = None
 
     cached_crypto_data = {}
@@ -28,15 +27,14 @@ class Crypto(plugin.Plugin):
         "btg" : "Bitcoin Gold",
     }
 
-    @plugin.command("c", "crypto")
-    def weather(self, message):    
-        _, _, crypto = message.message.lstrip("!").partition(" ")
-        crypto_name = self.crypto_names.get(crypto, None)
-        if crypto_name is not None:
+    @arg_botcmd("crypto_name", type = str)
+    def crypto(self, message, crypto_name = None):
+        crypto_code = self.crypto_names.get(crypto_name, None)
+        if crypto_code is not None:
             if self.is_crypto_data_stale():
                 self.update_cached_crypto_data()
 
-            return self.cached_crypto_data[crypto_name]
+            return self.cached_crypto_data[crypto_code]
         else:
             return f"Unkown cryptocurrency: {crypto_name}"
 
@@ -49,7 +47,7 @@ class Crypto(plugin.Plugin):
 
     def update_cached_crypto_data(self):
         try:
-            html = urlopen(CMC_URL)
+            html = urlopen(self.CMC_URL)
             tree = lxml.html.parse(html)
 
             crypto_data = {}
@@ -81,21 +79,13 @@ class Crypto(plugin.Plugin):
         percent_change = float(change_element.text.strip()[:-1])
         absolute_change = percent_change * price / 100
 
+        grey = "{:color='grey'}"
+        green = "{:color='green'}"
+        red = "{:color='red'}"
+
         if percent_change == 0:
-            return assembleFormattedText(
-                attributes.normal[attributes.bold[crypto_name],
-                f" ({crypto_symbol}) ${price:,.2f} (USD) ",
-                attributes.fg.gray[f"► $0 (0%)"]           
-                ])        
+            return f"{crypto_name} ({crypto_symbol}) ${price:,.2f} (USD) `► $0 (0%)`{grey}" 
         elif percent_change < 0:
-            return assembleFormattedText(
-                attributes.normal[attributes.bold[crypto_name],
-                f" ({crypto_symbol}) ${price:,.2f} (USD) ",
-                attributes.fg.red[f"▼ ${abs(absolute_change):.2f} ({abs(percent_change):.2f}%)"]           
-                ])
+            return f"{crypto_name} ({crypto_symbol}) ${price:,.2f} (USD) `▼ ${abs(absolute_change):.2f} ({abs(percent_change):.2f}%)`{red}"
         else:
-            return assembleFormattedText(
-                attributes.normal[attributes.bold[crypto_name],
-                f" ({crypto_symbol}) ${price:,.2f} (USD) ",
-                attributes.fg.green[f"▲ ${abs(absolute_change):.2f} ({abs(percent_change):.2f}%)"]           
-                ])
+            return f"{crypto_name} ({crypto_symbol}) ${price:,.2f} (USD) `▲ ${abs(absolute_change):.2f} ({abs(percent_change):.2f}%)`{green}"

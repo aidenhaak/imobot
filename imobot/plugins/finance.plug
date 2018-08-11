@@ -1,0 +1,9 @@
+[Core]
+Name = Finance
+Module = finance
+
+[Python]
+Version = 3
+
+[Documentation]
+Description = Gets ASX stock quotes.

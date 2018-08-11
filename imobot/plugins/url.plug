@@ -1,0 +1,9 @@
+[Core]
+Name = UrlTitles
+Module = url
+
+[Python]
+Version = 3
+
+[Documentation]
+Description = URL title unfurler.

@@ -1,0 +1,9 @@
+[Core]
+Name = Crypto
+Module = crypto
+
+[Python]
+Version = 3
+
+[Documentation]
+Description = Gets cryptocurrency prices.

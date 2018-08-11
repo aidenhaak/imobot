@@ -1,7 +1,7 @@
 
 import random
 
-from . import plugin
+from errbot import BotPlugin, botcmd
 
 MAGIC_EIGHT_BALL_RESPONSES = [
     "It is certain",
@@ -25,7 +25,7 @@ MAGIC_EIGHT_BALL_RESPONSES = [
     "Outlook not so good",
     "Very doubtful"]
 
-class MagicEightBall(plugin.Plugin):
-    @plugin.command("8ball")
-    def stats(self, message):
+class MagicEightBall(BotPlugin):
+    @botcmd
+    def eightball(self, message, args):
         return random.sample(MAGIC_EIGHT_BALL_RESPONSES, 1)[0]

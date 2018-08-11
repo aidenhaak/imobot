@@ -2,22 +2,18 @@
 import os
 import re
 
+from errbot import BotPlugin, re_botcmd
 from urllib.request import urlopen
 
 import lxml.html
 
-from . import plugin
-
 URL_REGEX = r"(?u)(https?://\S+)"
 
-class UrlTitles(plugin.Plugin):
-    @plugin.rule(URL_REGEX)
-    def title_auto(self, message):
-        urls = re.compile(URL_REGEX).findall(message.message)
-        titles = []
-        for url in urls:
-            html = urlopen(url)
-            tree = lxml.html.parse(html)
-            titles.append(tree.find(".//title").text)
-
-        return os.linesep.join(titles)
+class UrlTitles(BotPlugin):
+    @re_botcmd(pattern = URL_REGEX, prefixed = False, flags = re.IGNORECASE)
+    def title_unfurl(self, message, match):
+        url = match[0]
+        html = urlopen(match[0])
+        tree = lxml.html.parse(html)
+        title = tree.find(".//title")
+        return title.text if title else None
