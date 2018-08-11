@@ -39,8 +39,8 @@ class Finance(BotPlugin):
             response = urlopen(self.ASX_QUERY_URL.format(asx_code = asx_code))
             data = json.loads(response.read().decode("utf8"))
 
-            previous_close = data["chart"]["result"][0]["meta"]["chartPreviousClose"]
-            current_price = data["chart"]["result"][0]["indicators"]["quote"][0]["close"][0]
+            previous_close = round(data["chart"]["result"][0]["meta"]["chartPreviousClose"], 4)
+            current_price = round(data["chart"]["result"][0]["indicators"]["quote"][0]["close"][0], 4)
 
             change = current_price - previous_close
             percent_change = change / previous_close * 100
@@ -57,12 +57,20 @@ class Finance(BotPlugin):
         green = "{:color='green'}"
         red = "{:color='red'}"
 
+        change_in_dollars = abs(change)
+        change_in_cents = 100 * change_in_dollars
+        change = f"${change_in_dollars:,.2f}" if current_price > 1 else f"{change_in_cents:,.2f}¢"
+
+        current_price_in_dollars = current_price
+        current_price_in_cents = 100 * current_price_in_dollars
+        current_price = f"${current_price:,.2f}" if current_price > 1 else f"{current_price_in_cents:,.2f}¢"
+
         if percent_change == 0:
-            return f"{company_name} (ASX:{asx_code}) ${current_price:,.2f} `► $0 (0%)`{grey}" 
+            return f"{company_name} (ASX:{asx_code}) {current_price} `► $0 (0%)`{grey}" 
         elif percent_change < 0:
-            return f"{company_name} (ASX:{asx_code}) ${current_price:,.2f} `▼ ${abs(change):.2f} ({abs(percent_change):.2f}%)`{red}"
+            return f"{company_name} (ASX:{asx_code}) {current_price} `▼ {change} ({abs(percent_change):.2f}%)`{red}"
         else:
-            return f"{company_name} (ASX:{asx_code}) ${current_price:,.2f} `▲ ${abs(change):.2f} ({abs(percent_change):.2f}%)`{green}"
+            return f"{company_name} (ASX:{asx_code}) {current_price} `▲ {change} ({abs(percent_change):.2f}%)`{green}"
 
     XE_URL = "http://www.xe.com/currencyconverter/convert/?Amount=1&From={currency_from}&To={currency_to}"
 
