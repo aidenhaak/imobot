@@ -91,20 +91,22 @@ class Finance(BotPlugin):
         else:
             return f"{company_name} ({stock_code}) {current_price} `▲ {change} ({abs(percent_change):.2f}%)`{green}"
 
-    XE_URL = "http://www.xe.com/currencyconverter/convert/?Amount=1&From={currency_from}&To={currency_to}"
+    CURRENCY_URL = "https://query1.finance.yahoo.com/v7/finance/spark?symbols={currency_from}{currency_to}=X&range=2h&interval=1h"
 
     cached_fx_data = {}
-
-    @arg_botcmd("currency_from", type = str)
+  
     @arg_botcmd("currency_to", type = str)
+    @arg_botcmd("currency_from", type = str)  
     @arg_botcmd("--amount", type = float, default = 1.0)
     def fx(self, message, currency_from = None, currency_to = None, amount = None):
+        currency_from = currency_from.upper()
+        currency_to = currency_to.upper()
+
         cached_data_key = self.get_cache_data_key(currency_from, currency_to)
         fx_data = self.cached_fx_data.get(cached_data_key, None)
         if fx_data is None or self.is_fx_data_stale(fx_data[0]):
             fx_data = self.get_fx_data(currency_from, currency_to)
-            self.cached_fx_data[cached_data_key] = fx_data
-
+            
         if fx_data is None:
             return f"Unable to get FX data for {currency_from} to {currency_to}"
         else:
@@ -113,9 +115,18 @@ class Finance(BotPlugin):
     def get_cache_data_key(self, currency_from, currency_to):
         return currency_from + currency_to
 
-    def get_fx_quote_message(self, currency_from, currency_to, amount, conversion_rate):
-        converted_amount = amount * conversion_rate
-        return f"{amount} {currency_from.upper()} = {converted_amount} {currency_to.upper()}"
+    def get_fx_quote_message(self, currency_from, currency_to, amount, fx_data):
+        conversion_rate = fx_data["conversion_rate"]
+        change = fx_data["change"]
+        percent_change = fx_data["percent_change"]
+  
+        quote = self.get_formatted_currency_quote(currency_from, currency_to, conversion_rate, change, percent_change)
+
+        if amount > 1.0:
+            converted_amount = round(amount * conversion_rate, 2)
+            return f"{amount} {currency_from} = {converted_amount} {currency_to}\r\n{quote}"
+        else:
+            return quote
 
     def is_fx_data_stale(self, fx_data_cache_time):
         if fx_data_cache_time is None:
@@ -126,15 +137,33 @@ class Finance(BotPlugin):
 
     def get_fx_data(self, currency_from, currency_to):
         try:
-            url = self.XE_URL.format(currency_from = currency_from, currency_to = currency_to)
+            url = self.CURRENCY_URL.format(currency_from = currency_from, currency_to = currency_to)
             response = urlopen(url)
-            html = response.read().decode("utf8")
 
-            root = lxml.html.fromstring(html)
-            container = root.xpath("//div[@id=\"ucc-container\"]")[0]
-            amount_wrap_element = container.xpath("//span[@class=\"uccAmountWrap\"]")[0]
-            to_amount_element = amount_wrap_element.xpath("//span[@class=\"uccResultAmount\"]")[0]
+            data = json.loads(response.read().decode("utf8"))
 
-            return (datetime.datetime.now(), float(to_amount_element.text))
+            previous_conversion_rate = round(data["spark"]["result"][0]["response"][0]["meta"]["chartPreviousClose"], 4)
+            conversion_rate = round(data["spark"]["result"][0]["response"][0]["indicators"]["quote"][0]["close"][0], 4)
+
+            change = round(conversion_rate - previous_conversion_rate, 4)
+            percent_change = round(change / previous_conversion_rate * 100, 2)
+
+            cached_data_key = self.get_cache_data_key(currency_from, currency_to)
+            fx_data = (datetime.datetime.now(), { "conversion_rate" : conversion_rate, "change" : change, "percent_change" : percent_change })
+            self.cached_fx_data[cached_data_key] = fx_data
+            return fx_data
+            
         except Exception:
             pass # Ignore - just means FX data doesn't get updated.
+
+    def get_formatted_currency_quote(self, currency_from, currency_to, conversion_rate, change, percent_change):
+        grey = "{:color='grey'}"
+        green = "{:color='green'}"
+        red = "{:color='red'}"
+
+        if percent_change == 0:
+            return f"1 {currency_from} = {conversion_rate} {currency_to}  `► 0 (0%)`{grey}" 
+        elif percent_change < 0:
+            return f"1 {currency_from} = {conversion_rate} {currency_to} `▼ {abs(change)} ({abs(percent_change):.2f}%)`{red}"
+        else:
+            return f"1 {currency_from} = {conversion_rate} {currency_to} `▲ {abs(change)} ({abs(percent_change):.2f}%)`{green}"

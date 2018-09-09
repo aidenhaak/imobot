@@ -6,4 +6,4 @@ Module = finance
 Version = 3
 
 [Documentation]
-Description = Gets ASX stock quotes.
+Description = Gets prices from various stock and currency markets.
