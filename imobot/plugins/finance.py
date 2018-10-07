@@ -3,7 +3,7 @@ import datetime
 import json
 
 import lxml.html
-from errbot import BotPlugin, arg_botcmd
+from errbot import BotPlugin, arg_botcmd, botcmd
 from urllib.request import urlopen
 
 class Finance(BotPlugin):
@@ -13,20 +13,44 @@ class Finance(BotPlugin):
 
     YAHOO_FINANCE_QUERY_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{stock_code}?range=1d&interval=1d"
 
-    @arg_botcmd("stock_code", type = str)
-    def ndq(self, message, stock_code = None):  
-        return self.get_stock_quote(stock_code)
+    @botcmd(split_args_with=None)
+    def ndq(self, message, args):  
+        if not args:
+            yield "I'm sorry, I couldn't parse the arguments; the following arguments are required: stock_codes"
+            yield "usage: ndq [stock_codes]"
+            return
 
-    @arg_botcmd("stock_code", type = str)
-    def nyse(self, message, stock_code = None):
-        return self.get_stock_quote(stock_code)
+        self.cleanup_stale_data()
 
-    @arg_botcmd("stock_code", type = str)
-    def asx(self, message, stock_code = None):    
-        asx_code = self.to_asx_code(stock_code)
-        return self.get_stock_quote(asx_code)
+        for arg in args:
+            yield self.get_stock_quote(arg)
 
-    def get_stock_quote(self, stock_code):
+    @botcmd(split_args_with=None)
+    def nyse(self, message, args):
+        if not args:
+            yield "I'm sorry, I couldn't parse the arguments; the following arguments are required: stock_codes"
+            yield "usage: nyse [stock_codes]"
+            return
+
+        self.cleanup_stale_data()
+
+        for arg in args:
+            yield self.get_stock_quote(arg)
+
+    @botcmd(split_args_with=None)
+    def asx(self, message, args):    
+        if not args:
+            yield "I'm sorry, I couldn't parse the arguments; the following arguments are required: stock_codes"
+            yield "usage: asx [stock_codes]"
+            return
+
+        self.cleanup_stale_data()
+
+        for arg in args:
+            asx_code = self.to_asx_code(arg)
+            yield self.get_stock_quote(asx_code)
+
+    def get_stock_quote(self, stock_code):        
         stock_data = None
 
         if stock_code:
@@ -36,6 +60,8 @@ class Finance(BotPlugin):
 
         return f"Unable to get stock data for {stock_code}" if stock_data is None else stock_data[1]
 
+    def cleanup_stale_data(self):
+        self.cached_stock_data = {k : v for k, v in self.cached_stock_data.items() if not self.is_stock_data_stale(v[0])}
 
     def to_asx_code(self, stock_code):
         return f"{stock_code}.AX"
