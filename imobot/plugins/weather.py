@@ -35,8 +35,26 @@ class Weather(BotPlugin):
         "dar" : "Darwin"
     }
 
-    @arg_botcmd("location", type = str)
-    def weather(self, message, location = None):
+    @botcmd(name="w", split_args_with=None)
+    def weather_command1(self, message, args):
+        """Gets the weather for one or more locations."""
+        yield from self.weather_command_aux(message, args)
+
+    @botcmd(name="weather", split_args_with=None)
+    def weather_command2(self, message, args):
+        """Gets the weather for one or more locations."""
+        yield from self.weather_command_aux(message, args)
+
+    def weather_command_aux(self, message, args):
+        if not args:
+            yield "I'm sorry, I couldn't parse the arguments; the following arguments are required: locations"
+            yield "usage: weather [locations]"
+            return
+
+        for arg in args:
+            yield self.get_weather_message(arg)
+
+    def get_weather_message(self, location = None):
         location_name = self.location_names.get(location.lower(), None)
         if location_name is not None:
             if self.is_weather_data_stale():
@@ -44,7 +62,7 @@ class Weather(BotPlugin):
 
             return self.cached_weather_data[location_name]
         else:
-            return f"Unkown location: {location_name}"
+            return f"Unkown location: {location}"
 
     def is_weather_data_stale(self):
         if self.weather_data_cache_time is None:
@@ -57,8 +75,8 @@ class Weather(BotPlugin):
         try:
             request = urllib.request.Request(
                 self.BOM_URL, 
-                data=None, 
-                headers={
+                data = None, 
+                headers = { 
                     "User-Agent": fake_useragent.UserAgent(fallback = self.USER_AGENT_FALLBACK).random
                 }
             )
