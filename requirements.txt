@@ -22,7 +22,7 @@ jaraco.itertools==2.4
 jaraco.logging==1.5.2
 jaraco.stream==1.2
 jaraco.text==1.10.1
-Jinja2==2.10
+Jinja2==2.11.3
 lxml==4.2.4
 Markdown==2.6.11
 MarkupSafe==1.0
